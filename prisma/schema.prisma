@@ -1,0 +1,110 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                Int                @id @default(autoincrement()) @map("id")
+  name              String             @map("name")
+  email             String             @unique @map("email")
+  password          String             @map("password")
+  salt              String             @map("salt")
+  paymentAccounts   PaymentAccount[]   @relation("PaymentAccounts")
+  recurringPayments RecurringPayment[] @relation("UserRecurringPayments")
+  createdAt         DateTime           @default(now()) @map("created_at")
+  updatedAt         DateTime           @updatedAt @map("updated_at")
+
+  @@map("users")
+}
+
+model PaymentAccount {
+  id                Int                @id @default(autoincrement()) @map("id")
+  userId            Int                @map("user_id")
+  type              AccountType        @map("type")
+  balance           Float              @default(0.0) @map("balance")
+  user              User               @relation("PaymentAccounts", fields: [userId], references: [id])
+  transactions      Transaction[]      @relation("PaymentAccountTransactions")
+  recurringPayments RecurringPayment[] @relation("AccountRecurringPayments")
+  createdAt         DateTime           @default(now()) @map("created_at")
+  updatedAt         DateTime           @updatedAt @map("updated_at")
+
+  @@map("payment_accounts")
+}
+
+model Transaction {
+  id               Int               @id @default(autoincrement()) @map("id")
+  paymentAccountId Int               @map("payment_account_id")
+  amount           Float             @map("amount")
+  currency         Currency          @map("currency")
+  toAddress        String            @map("to_address")
+  status           TransactionStatus @map("status")
+  paymentAccount   PaymentAccount    @relation("PaymentAccountTransactions", fields: [paymentAccountId], references: [id])
+  createdAt        DateTime          @default(now()) @map("created_at")
+  updatedAt        DateTime          @updatedAt @map("updated_at")
+
+  @@map("transactions")
+}
+
+model RecurringPayment {
+  id               Int             @id @default(autoincrement()) @map("id")
+  userId           Int             @map("user_id")
+  paymentAccountId Int?            @map("payment_account_id")
+  amount           Float           @map("amount")
+  currency         Currency        @map("currency")
+  interval         PaymentInterval @map("interval")
+  nextPaymentAt    DateTime        @map("next_payment_at")
+  createdAt        DateTime        @default(now()) @map("created_at")
+  updatedAt        DateTime        @updatedAt @map("updated_at")
+  user             User            @relation("UserRecurringPayments", fields: [userId], references: [id])
+  paymentAccount   PaymentAccount? @relation("AccountRecurringPayments", fields: [paymentAccountId], references: [id])
+
+  @@map("recurring_payments")
+}
+
+enum AccountType {
+  CREDIT @map("credit")
+  DEBIT  @map("debit")
+  LOAN   @map("loan")
+}
+
+enum Currency {
+  USD
+  IDR
+}
+
+enum TransactionStatus {
+  PENDING   @map("pending")
+  COMPLETED @map("completed")
+  FAILED    @map("failed")
+}
+
+enum PaymentInterval {
+  DAILY   @map("daily")
+  WEEKLY  @map("weekly")
+  MONTHLY @map("monthly")
+  YEARLY  @map("yearly")
+}
+
+model Book {
+  id            String    @id @default(cuid()) @map("id")
+  title         String    @map("title")
+  author        String    @map("author")
+  publishedYear Int       @map("published_year")
+  genres        String[]  @map("genres")
+  stock         Int       @map("stock")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+  deletedAt     DateTime? @map("deleted_at")
+
+  @@map("books")
+}
