@@ -7,7 +7,10 @@ export function initSwagger(app: INestApplication) {
     .setDescription(
       `CrediFlow API is a lightweight backend application developed using NestJS, Prisma, and PostgreSQL.`,
     )
-    .addBearerAuth();
+    .addBearerAuth(
+      { type: 'http', scheme: 'bearer', bearerFormat: 'JWT' },
+      'authorization',
+    );
 
   // split by comma and add multiple servers
   const serverSwagger =
