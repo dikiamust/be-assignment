@@ -17,8 +17,14 @@ import { AuthGuard } from '@nestjs/passport';
 import { User } from 'src/decorators';
 import { IUserData } from 'src/guards/strategy/interface/user-data.interface';
 import { TransactionService } from './transaction.service';
-import { QueryTransactionList, SendMoneyDto } from './dto';
+import {
+  QueryTransactionList,
+  SendMoneyDto,
+  TopUpDto,
+  WithdrawMoneyDto,
+} from './dto';
 import { createTransaction, transactionList } from './example-response';
+import { Currency } from '@prisma/client';
 
 @ApiTags('Transaction')
 @ApiBearerAuth('authorization')
@@ -28,7 +34,9 @@ export class TransactionController {
   constructor(private readonly transactionService: TransactionService) {}
 
   @ApiOperation({
-    description: `Endpoint to send money`,
+    description: `Endpoint to top-up funds from the system. Available currencies: ${Object.values(
+      Currency,
+    )}`,
   })
   @ApiOkResponse({
     description: 'Success Response',
@@ -38,13 +46,15 @@ export class TransactionController {
       },
     },
   })
-  @Post('send')
-  sendMoney(@User() user: IUserData, @Body() dto: SendMoneyDto) {
-    return this.transactionService.processTransaction(dto, user.userId);
+  @Post('top-up')
+  topUp(@User() user: IUserData, @Body() dto: TopUpDto) {
+    return this.transactionService.topUpBySystem(dto, user.userId);
   }
 
   @ApiOperation({
-    description: `Endpoint to withdraw money`,
+    description: `Endpoint to send money. You can send money to a payment account in this app or to an external recipient, but not both at the same time. Available currencies: ${Object.values(
+      Currency,
+    )}`,
   })
   @ApiOkResponse({
     description: 'Success Response',
@@ -54,9 +64,43 @@ export class TransactionController {
       },
     },
   })
-  @Post('withdraw')
-  withdrawMoney(@User() user: IUserData, @Body() dto: SendMoneyDto) {
-    return this.transactionService.processTransaction(dto, user.userId);
+  @Post('send/:senderPaymentAccountId')
+  sendMoney(
+    @User() user: IUserData,
+    @Body() dto: SendMoneyDto,
+    @Param('senderPaymentAccountId') senderPaymentAccountId: number,
+  ) {
+    return this.transactionService.sendMoney(
+      dto,
+      user.userId,
+      senderPaymentAccountId,
+    );
+  }
+
+  @ApiOperation({
+    description: `Endpoint to withdraw money. You can withdraw funds from your payment account to your external account. Available currencies: ${Object.values(
+      Currency,
+    )}`,
+  })
+  @ApiOkResponse({
+    description: 'Success Response',
+    content: {
+      'application/json': {
+        example: createTransaction,
+      },
+    },
+  })
+  @Post('withdraw/:senderPaymentAccountId')
+  withdrawMoney(
+    @User() user: IUserData,
+    @Body() dto: WithdrawMoneyDto,
+    @Param('senderPaymentAccountId') senderPaymentAccountId: number,
+  ) {
+    return this.transactionService.withdrawMoney(
+      dto,
+      user.userId,
+      senderPaymentAccountId,
+    );
   }
 
   @ApiOperation({

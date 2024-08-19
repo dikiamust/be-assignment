@@ -28,29 +28,33 @@ model User {
 }
 
 model PaymentAccount {
-  id                Int                @id @default(autoincrement()) @map("id")
-  userId            Int                @map("user_id")
-  type              AccountType        @map("type")
-  balance           Float              @default(0.0) @map("balance")
-  user              User               @relation("PaymentAccounts", fields: [userId], references: [id])
-  transactions      Transaction[]      @relation("PaymentAccountTransactions")
-  recurringPayments RecurringPayment[] @relation("AccountRecurringPayments")
-  createdAt         DateTime           @default(now()) @map("created_at")
-  updatedAt         DateTime           @updatedAt @map("updated_at")
+  id                    Int                @id @default(autoincrement()) @map("id")
+  userId                Int                @map("user_id")
+  type                  AccountType        @map("type")
+  balance               Float              @default(0.0) @map("balance")
+  user                  User               @relation("PaymentAccounts", fields: [userId], references: [id])
+  senderTransactions    Transaction[]      @relation("SenderPaymentAccountTransactions")
+  recipientTransactions Transaction[]      @relation("RecipientPaymentAccountTransactions")
+  recurringPayments     RecurringPayment[] @relation("AccountRecurringPayments")
+  createdAt             DateTime           @default(now()) @map("created_at")
+  updatedAt             DateTime           @updatedAt @map("updated_at")
 
   @@map("payment_accounts")
 }
 
 model Transaction {
-  id               Int               @id @default(autoincrement()) @map("id")
-  paymentAccountId Int               @map("payment_account_id")
-  amount           Float             @map("amount")
-  currency         Currency          @map("currency")
-  toAddress        String            @map("to_address")
-  status           TransactionStatus @map("status")
-  paymentAccount   PaymentAccount    @relation("PaymentAccountTransactions", fields: [paymentAccountId], references: [id])
-  createdAt        DateTime          @default(now()) @map("created_at")
-  updatedAt        DateTime          @updatedAt @map("updated_at")
+  id                        Int               @id @default(autoincrement()) @map("id")
+  senderPaymentAccountId    Int               @map("sender_payment_account_id")
+  recipientPaymentAccountId Int?              @map("recipient_payment_account_id")
+  amount                    Float             @map("amount")
+  currency                  Currency          @map("currency")
+  externalRecipient         String?           @map("external_recipient")
+  status                    TransactionStatus @map("status")
+  type                      TransactionType   @map("type")
+  senderPaymentAccount      PaymentAccount    @relation("SenderPaymentAccountTransactions", fields: [senderPaymentAccountId], references: [id])
+  recipientPaymentAccount   PaymentAccount?   @relation("RecipientPaymentAccountTransactions", fields: [recipientPaymentAccountId], references: [id])
+  createdAt                 DateTime          @default(now()) @map("created_at")
+  updatedAt                 DateTime          @updatedAt @map("updated_at")
 
   @@map("transactions")
 }
@@ -69,6 +73,12 @@ model RecurringPayment {
   paymentAccount   PaymentAccount? @relation("AccountRecurringPayments", fields: [paymentAccountId], references: [id])
 
   @@map("recurring_payments")
+}
+
+enum TransactionType {
+  TOPUP    @map("top-up")
+  SEND     @map("send")
+  WITHDRAW @map("withdraw")
 }
 
 enum AccountType {

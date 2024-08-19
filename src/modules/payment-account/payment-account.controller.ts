@@ -20,6 +20,7 @@ import { createPaymentAccount, paymentAccountList } from './example-response';
 import { AuthGuard } from '@nestjs/passport';
 import { User } from 'src/decorators';
 import { IUserData } from 'src/guards/strategy/interface/user-data.interface';
+import { AccountType } from '@prisma/client';
 
 @ApiTags('Payment-Account')
 @ApiBearerAuth('authorization')
@@ -29,7 +30,9 @@ export class PaymentAccountController {
   constructor(private readonly paymentAccountService: PaymentAccountService) {}
 
   @ApiOperation({
-    description: `Endpoint for creating a new payment account`,
+    description: `Endpoint for creating a new payment account. Available types: ${Object.values(
+      AccountType,
+    )}`,
   })
   @ApiOkResponse({
     description: 'Success Response',
@@ -61,7 +64,9 @@ export class PaymentAccountController {
   }
 
   @ApiOperation({
-    description: `Endpoint for updating a payment accounts`,
+    description: `Endpoint for updating a payment accounts. Available types: ${Object.values(
+      AccountType,
+    )}`,
   })
   @ApiOkResponse({
     description: 'Success Response',

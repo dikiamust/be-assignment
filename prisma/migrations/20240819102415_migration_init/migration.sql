@@ -1,4 +1,7 @@
 -- CreateEnum
+CREATE TYPE "TransactionType" AS ENUM ('top-up', 'send', 'withdraw');
+
+-- CreateEnum
 CREATE TYPE "AccountType" AS ENUM ('credit', 'debit', 'loan');
 
 -- CreateEnum
@@ -38,11 +41,13 @@ CREATE TABLE "payment_accounts" (
 -- CreateTable
 CREATE TABLE "transactions" (
     "id" SERIAL NOT NULL,
-    "payment_account_id" INTEGER NOT NULL,
+    "sender_payment_account_id" INTEGER NOT NULL,
+    "recipient_payment_account_id" INTEGER,
     "amount" DOUBLE PRECISION NOT NULL,
     "currency" "Currency" NOT NULL,
-    "to_address" TEXT NOT NULL,
+    "external_recipient" TEXT,
     "status" "TransactionStatus" NOT NULL,
+    "type" "TransactionType" NOT NULL,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
 
@@ -71,7 +76,10 @@ CREATE UNIQUE INDEX "users_email_key" ON "users"("email");
 ALTER TABLE "payment_accounts" ADD CONSTRAINT "payment_accounts_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "transactions" ADD CONSTRAINT "transactions_payment_account_id_fkey" FOREIGN KEY ("payment_account_id") REFERENCES "payment_accounts"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "transactions" ADD CONSTRAINT "transactions_sender_payment_account_id_fkey" FOREIGN KEY ("sender_payment_account_id") REFERENCES "payment_accounts"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "transactions" ADD CONSTRAINT "transactions_recipient_payment_account_id_fkey" FOREIGN KEY ("recipient_payment_account_id") REFERENCES "payment_accounts"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "recurring_payments" ADD CONSTRAINT "recurring_payments_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
