@@ -20,7 +20,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    command: sh -c "yarn db:deploy && yarn start:dev"
+    command: sh -c "yarn db:deploy && yarn db:seed && yarn start:dev"
     ports:
       - '${PORT}:${PORT}'
     volumes:
