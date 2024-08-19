@@ -252,14 +252,31 @@ export class TransactionService {
         : undefined;
       const take = query?.limit ? Number(query.limit) : undefined;
 
-      const where: Prisma.TransactionWhereInput = {
-        senderPaymentAccountId: paymentAccountId,
-        senderPaymentAccount: {
-          userId,
-        },
+      const paymentAccount =
+        await this.prismaService.paymentAccount.findFirstOrThrow({
+          where: { id: paymentAccountId, userId },
+        });
+
+      let where: Prisma.TransactionWhereInput = {
+        OR: [
+          { senderPaymentAccountId: paymentAccountId },
+          { recipientPaymentAccountId: paymentAccountId },
+        ],
       };
 
-      const paymentAccount = await this.prismaService.transaction.findMany({
+      if (query.flow) {
+        if (query.flow === 'in') {
+          where = {
+            recipientPaymentAccountId: paymentAccountId,
+          };
+        } else if (query.flow === 'out') {
+          where = {
+            senderPaymentAccountId: paymentAccountId,
+          };
+        }
+      }
+
+      const transaction = await this.prismaService.transaction.findMany({
         orderBy: {
           createdAt: 'desc',
         },
@@ -268,17 +285,20 @@ export class TransactionService {
         take,
       });
 
-      const countBook = await this.prismaService.transaction.count({
+      const countTransaction = await this.prismaService.transaction.count({
         where,
       });
 
       return PaginationResponse(
-        paymentAccount,
-        countBook,
+        transaction,
+        countTransaction,
         query?.page,
         query?.limit,
       );
     } catch (error) {
+      if (error.code === 'P2025') {
+        throw new NotFoundException('Payment account not found.');
+      }
       throw new BadRequestException(error?.message || 'Something went wrong');
     }
   }
