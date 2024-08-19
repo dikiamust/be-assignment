@@ -32,6 +32,7 @@ CREATE TABLE "payment_accounts" (
     "user_id" INTEGER NOT NULL,
     "type" "AccountType" NOT NULL,
     "balance" DOUBLE PRECISION NOT NULL DEFAULT 0.0,
+    "currency" "Currency" NOT NULL,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
 

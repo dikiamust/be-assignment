@@ -96,6 +96,9 @@ yarn # or yarn install
 #  run migration
 yarn db:migrate
 
+#  run seeder
+yarn db:seed
+
 ```
 
 ## Running the app

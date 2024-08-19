@@ -18,6 +18,7 @@ export class PaymentAccountService {
         data: {
           type: dto.type,
           userId,
+          currency: dto.currency,
         },
       });
     } catch (error) {

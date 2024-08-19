@@ -1,10 +1,26 @@
-export const createTransaction = {
+const transaction = {
   id: 1,
-  paymentAccountId: 1,
-  amount: 10,
-  currency: 'IDR',
-  toAddress: 'account1234',
+  senderPaymentAccountId: 1,
+  recipientPaymentAccountId: 2,
+  amount: 1000,
+  currency: 'USD',
+  externalRecipient: null,
   status: 'COMPLETED',
-  createdAt: '2024-08-18T15:19:52.707Z',
-  updatedAt: '2024-08-18T15:20:22.717Z',
+  createdAt: '2024-08-19T14:34:10.965Z',
+  updatedAt: '2024-08-19T14:34:40.983Z',
+};
+
+export const createTopupTransaction = {
+  ...transaction,
+  type: 'TOPUP',
+};
+
+export const createSenMoneyTransaction = {
+  ...transaction,
+  type: 'SEND',
+};
+
+export const createWithdrawTransaction = {
+  ...transaction,
+  type: 'WITHDRAW',
 };

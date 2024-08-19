@@ -23,7 +23,12 @@ import {
   TopUpDto,
   WithdrawMoneyDto,
 } from './dto';
-import { createTransaction, transactionList } from './example-response';
+import {
+  createSenMoneyTransaction,
+  createTopupTransaction,
+  createWithdrawTransaction,
+  transactionList,
+} from './example-response';
 import { Currency } from '@prisma/client';
 
 @ApiTags('Transaction')
@@ -42,7 +47,7 @@ export class TransactionController {
     description: 'Success Response',
     content: {
       'application/json': {
-        example: createTransaction,
+        example: createTopupTransaction,
       },
     },
   })
@@ -60,7 +65,7 @@ export class TransactionController {
     description: 'Success Response',
     content: {
       'application/json': {
-        example: createTransaction,
+        example: createSenMoneyTransaction,
       },
     },
   })
@@ -86,7 +91,7 @@ export class TransactionController {
     description: 'Success Response',
     content: {
       'application/json': {
-        example: createTransaction,
+        example: createWithdrawTransaction,
       },
     },
   })

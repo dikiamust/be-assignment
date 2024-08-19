@@ -26,7 +26,7 @@ export class TransactionService {
       const systemPaymentAccountId = 1;
       const systemPaymentAccount =
         await this.prismaService.paymentAccount.findFirst({
-          where: { id: systemPaymentAccountId },
+          where: { id: systemPaymentAccountId, user: { name: 'system' } },
         });
 
       if (!systemPaymentAccount) {

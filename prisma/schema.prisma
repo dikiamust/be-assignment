@@ -32,6 +32,7 @@ model PaymentAccount {
   userId                Int                @map("user_id")
   type                  AccountType        @map("type")
   balance               Float              @default(0.0) @map("balance")
+  currency              Currency           @map("currency")
   user                  User               @relation("PaymentAccounts", fields: [userId], references: [id])
   senderTransactions    Transaction[]      @relation("SenderPaymentAccountTransactions")
   recipientTransactions Transaction[]      @relation("RecipientPaymentAccountTransactions")
