@@ -1,0 +1,36 @@
+services:
+  postgresdb:
+    image: postgres:16
+    restart: always
+    environment:
+      POSTGRES_USER: ${DKR_DB_USER}
+      POSTGRES_PASSWORD: ${DKR_DB_PSWRD}
+      POSTGRES_DB: ${DKR_DB_NAME}
+    ports:
+      - '${DKR_DB_LOCAL_PORT}:${DKR_DB_DOCKER_PORT}'
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD', 'pg_isready', '-U', '${DKR_DB_USER}']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  credi-flow-be:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: sh -c "yarn db:deploy && yarn start:dev"
+    ports:
+      - '${PORT}:${PORT}'
+    volumes:
+      - .:/app
+      - /app/node_modules
+    env_file:
+      - .env
+    depends_on:
+      postgresdb:
+        condition: service_healthy
+
+volumes:
+  db-data:
