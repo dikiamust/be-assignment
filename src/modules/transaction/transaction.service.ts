@@ -5,11 +5,13 @@ import {
 } from '@nestjs/common';
 import { TransactionStatus } from '@prisma/client';
 import { PrismaService } from 'src/config/database/prisma.service';
-import { SendMoneyDto, WithdrawMoneyDto } from './dto';
+import { QueryTransactionList, SendMoneyDto, WithdrawMoneyDto } from './dto';
+import { Prisma } from '@prisma/client';
+import { PaginationResponse } from 'src/common/pagination';
 
 @Injectable()
 export class TransactionService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prismaService: PrismaService) {}
 
   // Process transaction for both send and withdraw
   async processTransaction(
@@ -19,16 +21,17 @@ export class TransactionService {
     try {
       const { paymentAccountId, amount } = dto;
 
-      const paymentAccount = await this.prisma.paymentAccount.findFirstOrThrow({
-        where: { id: paymentAccountId, userId },
-      });
+      const paymentAccount =
+        await this.prismaService.paymentAccount.findFirstOrThrow({
+          where: { id: paymentAccountId, userId },
+        });
 
       // Validate that the balance is sufficient for the transaction
       if (paymentAccount.balance < amount) {
         throw new BadRequestException('Insufficient balance');
       }
 
-      const transaction = await this.prisma.transaction.create({
+      const transaction = await this.prismaService.transaction.create({
         data: {
           paymentAccountId,
           amount,
@@ -41,14 +44,14 @@ export class TransactionService {
       // Simulate long-running process (e.g., 30 seconds)
       await this.simulateTransactionProcessing(transaction);
 
-      const updatedTransaction = await this.prisma.transaction.update({
+      const updatedTransaction = await this.prismaService.transaction.update({
         where: { id: transaction.id },
         data: {
           status: TransactionStatus.COMPLETED,
         },
       });
 
-      await this.prisma.paymentAccount.update({
+      await this.prismaService.paymentAccount.update({
         where: { id: paymentAccountId, userId },
         data: {
           balance: paymentAccount.balance - amount,
@@ -75,5 +78,47 @@ export class TransactionService {
         resolve(transaction);
       }, 30000); // 30 seconds
     });
+  }
+
+  async getAllTransactionByPaymentAccountId(
+    query: QueryTransactionList,
+    paymentAccountId,
+    userId: number,
+  ) {
+    try {
+      const skip = query?.limit
+        ? Number(query.limit) * Number(query.page - 1)
+        : undefined;
+      const take = query?.limit ? Number(query.limit) : undefined;
+
+      const where: Prisma.TransactionWhereInput = {
+        paymentAccountId,
+        paymentAccount: {
+          userId,
+        },
+      };
+
+      const paymentAccount = await this.prismaService.transaction.findMany({
+        orderBy: {
+          createdAt: 'desc',
+        },
+        where,
+        skip,
+        take,
+      });
+
+      const countBook = await this.prismaService.transaction.count({
+        where,
+      });
+
+      return PaginationResponse(
+        paymentAccount,
+        countBook,
+        query?.page,
+        query?.limit,
+      );
+    } catch (error) {
+      throw new BadRequestException(error?.message || 'Something went wrong');
+    }
   }
 }

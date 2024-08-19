@@ -51,34 +51,40 @@ export class AuthService {
   }
 
   async signin(dto: SigninDto) {
-    const { email, password, confirmPassword } = dto;
-    if (password !== confirmPassword) {
-      throw new BadRequestException(
-        'The password and confirmation password do not match.',
-      );
+    try {
+      const { email, password, confirmPassword } = dto;
+      if (password !== confirmPassword) {
+        throw new BadRequestException(
+          'The password and confirmation password do not match.',
+        );
+      }
+
+      const user = await this.prismaService.user.findFirst({
+        where: { email },
+      });
+
+      if (!user) {
+        throw new ForbiddenException(
+          'The email or password you provided is incorrect.',
+        );
+      }
+
+      const isMatch = await bcrypt.compare(password, user.password);
+
+      if (!isMatch) {
+        throw new ForbiddenException(
+          'The email or password you provided is incorrect.',
+        );
+      }
+
+      const token = await this.tokenAuthService.signToken(user.id);
+
+      return {
+        message: 'Login successful.',
+        token,
+      };
+    } catch (error) {
+      throw new BadRequestException(error?.message || 'Something went wrong');
     }
-
-    const user = await this.prismaService.user.findFirst({ where: { email } });
-
-    if (!user) {
-      throw new ForbiddenException(
-        'The email or password you provided is incorrect.',
-      );
-    }
-
-    const isMatch = await bcrypt.compare(password, user.password);
-
-    if (!isMatch) {
-      throw new ForbiddenException(
-        'The email or password you provided is incorrect.',
-      );
-    }
-
-    const token = await this.tokenAuthService.signToken(user.id);
-
-    return {
-      message: 'Login successful.',
-      token,
-    };
   }
 }

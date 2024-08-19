@@ -29,7 +29,7 @@ export class PaymentAccountController {
   constructor(private readonly paymentAccountService: PaymentAccountService) {}
 
   @ApiOperation({
-    description: `Craete a Payment-Account`,
+    description: `Endpoint for creating a new payment account`,
   })
   @ApiOkResponse({
     description: 'Success Response',
@@ -45,7 +45,7 @@ export class PaymentAccountController {
   }
 
   @ApiOperation({
-    description: `Get Payment-Account list`,
+    description: `Endpoint to retrieve a list of all payment accounts owned by a user`,
   })
   @ApiOkResponse({
     description: 'Success Response',
@@ -61,7 +61,7 @@ export class PaymentAccountController {
   }
 
   @ApiOperation({
-    description: `Update a Payment-Account`,
+    description: `Endpoint for updating a payment accounts`,
   })
   @ApiOkResponse({
     description: 'Success Response',
