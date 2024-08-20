@@ -19,14 +19,34 @@ import { PaginationResponse } from 'src/common/pagination';
 export class TransactionService {
   constructor(private readonly prismaService: PrismaService) {}
 
+  private async convertCurrency(
+    fromCurrency: string,
+    toCurrency: string,
+    amount: number,
+  ): Promise<number> {
+    const conversionRates = {
+      USD: { IDR: 14000 }, // 1 USD = 14000 IDR
+      IDR: { USD: 1 / 14000 }, // 1 IDR = 1/14000 USD
+    };
+
+    const rate = conversionRates[fromCurrency]?.[toCurrency];
+
+    if (!rate) {
+      throw new BadRequestException(
+        `Conversion rate from ${fromCurrency} to ${toCurrency} not available.`,
+      );
+    }
+
+    return amount * rate;
+  }
+
   async topUpBySystem(dto: TopUpDto, userId: number) {
     try {
       const { currency, amount } = dto;
 
-      const systemPaymentAccountId = 1;
       const systemPaymentAccount =
         await this.prismaService.paymentAccount.findFirst({
-          where: { id: systemPaymentAccountId, user: { name: 'system' } },
+          where: { user: { email: 'system@mail.com' } },
         });
 
       if (!systemPaymentAccount) {
@@ -37,8 +57,19 @@ export class TransactionService {
 
       const recipientPaymentAccount =
         await this.prismaService.paymentAccount.findFirstOrThrow({
-          where: { userId },
+          where: { id: dto.paymentAccountId, userId },
         });
+
+      let convertedAmount = amount;
+      // Check if the recipient's currency is different from USD
+      if (recipientPaymentAccount.currency !== 'USD') {
+        // Convert the amount to the recipient's currency
+        convertedAmount = await this.convertCurrency(
+          'USD',
+          recipientPaymentAccount.currency,
+          amount,
+        );
+      }
 
       const transaction = await this.prismaService.transaction.create({
         data: {
@@ -64,7 +95,7 @@ export class TransactionService {
       await this.prismaService.paymentAccount.update({
         where: { id: recipientPaymentAccount.id, userId },
         data: {
-          balance: recipientPaymentAccount.balance + amount,
+          balance: recipientPaymentAccount.balance + convertedAmount,
         },
       });
 

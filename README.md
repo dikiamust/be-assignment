@@ -63,7 +63,7 @@ Features:
 - Using `docker-compose` or any automation script to run the app with single command is a plus.
 - Job schedulers utilization is a plus
 
-**be-assignment** is a lightweight backend application developed using NestJS, Prisma, and PostgreSQL.
+## be-assignment is a lightweight backend application developed using NestJS, Prisma, and PostgreSQL.
 
 ## Clone
 

@@ -27,7 +27,16 @@ class BaseTransactionDto {
   currency: Currency;
 }
 
-export class TopUpDto extends BaseTransactionDto {}
+export class TopUpDto extends BaseTransactionDto {
+  @ApiProperty({
+    description: 'Your account wants to be topped up',
+    example: 2,
+    required: true,
+  })
+  @IsNotEmpty()
+  @IsNumber()
+  paymentAccountId: number;
+}
 
 export class SendMoneyDto extends BaseTransactionDto {
   @ApiProperty({
@@ -51,7 +60,7 @@ export class SendMoneyDto extends BaseTransactionDto {
 
 export class WithdrawMoneyDto extends BaseTransactionDto {
   @ApiProperty({
-    description: 'your account to make withdrawal',
+    description: 'Your account to make withdrawal',
     example: 'account1234',
     required: true,
   })
