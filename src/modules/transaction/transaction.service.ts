@@ -144,12 +144,27 @@ export class TransactionService {
         throw new NotFoundException('Sender Payment Account not found.');
       }
 
-      // Check if the balance is sufficient for the transaction
-      if (senderPaymentAccount.balance < amount) {
+      let balanceSenderPaymentAccount = senderPaymentAccount.balance - amount;
+      let senderConvertedAmount = amount;
+      if (senderPaymentAccount.currency !== currency) {
+        senderConvertedAmount = await this.convertCurrency(
+          currency,
+          senderPaymentAccount.currency,
+          amount,
+        );
+
+        balanceSenderPaymentAccount =
+          senderPaymentAccount.balance - senderConvertedAmount;
+      }
+
+      // Check if the balance is sufficient after conversion
+      if (senderPaymentAccount.balance < senderConvertedAmount) {
         throw new BadRequestException('Insufficient balance');
       }
 
       let recipientPaymentAccount;
+      let balanceRecipientPaymentAccount;
+      let recipientConvertedAmount = amount;
       if (recipientPaymentAccountId) {
         recipientPaymentAccount =
           await this.prismaService.paymentAccount.findFirst({
@@ -159,15 +174,30 @@ export class TransactionService {
         if (!recipientPaymentAccount) {
           throw new NotFoundException('Recipient Payment Account not found.');
         }
+
+        balanceRecipientPaymentAccount =
+          recipientPaymentAccount.balance + amount;
+
+        if (recipientPaymentAccount.currency !== currency) {
+          recipientConvertedAmount = await this.convertCurrency(
+            currency,
+            recipientPaymentAccount?.currency,
+            amount,
+          );
+
+          balanceRecipientPaymentAccount =
+            recipientPaymentAccount.balance + recipientConvertedAmount;
+        }
       }
 
+      // This ensures that the transaction record is saved even if an error occurs later.
       const transaction = await this.prismaService.transaction.create({
         data: {
           senderPaymentAccountId: senderPaymentAccount.id,
           recipientPaymentAccountId: recipientPaymentAccount?.id,
           amount,
-          currency: currency,
-          externalRecipient: externalRecipient,
+          currency,
+          externalRecipient,
           status: TransactionStatus.PENDING,
           type: TransactionType.SEND,
         },
@@ -176,30 +206,32 @@ export class TransactionService {
       // Simulate long-running process (e.g., 30 seconds)
       await this.simulateTransactionProcessing(transaction);
 
-      const updatedTransaction = await this.prismaService.transaction.update({
-        where: { id: transaction.id },
-        data: {
-          status: TransactionStatus.COMPLETED,
-        },
-      });
+      const result = await this.prismaService.$transaction(async (prisma) => {
+        const updatedTransaction = await prisma.transaction.update({
+          where: { id: transaction.id },
+          data: { status: TransactionStatus.COMPLETED },
+        });
 
-      await this.prismaService.paymentAccount.update({
-        where: { id: senderPaymentAccount.id, userId },
-        data: {
-          balance: senderPaymentAccount.balance - amount,
-        },
-      });
-
-      if (recipientPaymentAccountId) {
-        await this.prismaService.paymentAccount.update({
-          where: { id: recipientPaymentAccount?.id },
+        await prisma.paymentAccount.update({
+          where: { id: senderPaymentAccount.id, userId },
           data: {
-            balance: recipientPaymentAccount.balance + amount,
+            balance: balanceSenderPaymentAccount,
           },
         });
-      }
 
-      return updatedTransaction;
+        if (recipientPaymentAccountId) {
+          await prisma.paymentAccount.update({
+            where: { id: recipientPaymentAccount?.id },
+            data: {
+              balance: balanceRecipientPaymentAccount,
+            },
+          });
+        }
+
+        return updatedTransaction;
+      });
+
+      return result;
     } catch (error) {
       throw new BadRequestException(error?.message || 'Something went wrong');
     }
