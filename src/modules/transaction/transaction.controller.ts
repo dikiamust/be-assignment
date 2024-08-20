@@ -95,16 +95,16 @@ export class TransactionController {
       },
     },
   })
-  @Post('withdraw/:senderPaymentAccountId')
+  @Post('withdraw/:paymentAccountId')
   withdrawMoney(
     @User() user: IUserData,
     @Body() dto: WithdrawMoneyDto,
-    @Param('senderPaymentAccountId') senderPaymentAccountId: number,
+    @Param('paymentAccountId') paymentAccountId: number,
   ) {
     return this.transactionService.withdrawMoney(
       dto,
       user.userId,
-      senderPaymentAccountId,
+      paymentAccountId,
     );
   }
 

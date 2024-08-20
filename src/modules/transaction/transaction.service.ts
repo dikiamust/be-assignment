@@ -250,11 +250,25 @@ export class TransactionService {
           where: { id: senderPaymentAccountId, userId },
         });
 
+      let balanceSenderPaymentAccount = senderPaymentAccount.balance - amount;
+      let senderConvertedAmount = amount;
+      if (senderPaymentAccount.currency !== currency) {
+        senderConvertedAmount = await this.convertCurrency(
+          currency,
+          senderPaymentAccount.currency,
+          amount,
+        );
+
+        balanceSenderPaymentAccount =
+          senderPaymentAccount.balance - senderConvertedAmount;
+      }
+
       // Check if the balance is sufficient for the transaction
-      if (senderPaymentAccount?.balance < amount) {
+      if (senderPaymentAccount?.balance < senderConvertedAmount) {
         throw new BadRequestException('Insufficient balance');
       }
 
+      // This ensures that the transaction record is saved even if an error occurs later.
       const transaction = await this.prismaService.transaction.create({
         data: {
           senderPaymentAccountId: senderPaymentAccount.id,
@@ -269,21 +283,25 @@ export class TransactionService {
       // Simulate long-running process (e.g., 30 seconds)
       await this.simulateTransactionProcessing(transaction);
 
-      const updatedTransaction = await this.prismaService.transaction.update({
-        where: { id: transaction.id },
-        data: {
-          status: TransactionStatus.COMPLETED,
-        },
+      const result = await this.prismaService.$transaction(async (prisma) => {
+        const updatedTransaction = await prisma.transaction.update({
+          where: { id: transaction.id },
+          data: {
+            status: TransactionStatus.COMPLETED,
+          },
+        });
+
+        await prisma.paymentAccount.update({
+          where: { id: senderPaymentAccount.id, userId },
+          data: {
+            balance: balanceSenderPaymentAccount,
+          },
+        });
+
+        return updatedTransaction;
       });
 
-      await this.prismaService.paymentAccount.update({
-        where: { id: senderPaymentAccount.id, userId },
-        data: {
-          balance: senderPaymentAccount.balance - amount,
-        },
-      });
-
-      return updatedTransaction;
+      return result;
     } catch (error) {
       if (error.code === 'P2025') {
         throw new NotFoundException('Payment account not found.');
