@@ -14,15 +14,14 @@ datasource db {
 }
 
 model User {
-  id                Int                @id @default(autoincrement()) @map("id")
-  name              String             @map("name")
-  email             String             @unique @map("email")
-  password          String             @map("password")
-  salt              String             @map("salt")
-  paymentAccounts   PaymentAccount[]   @relation("PaymentAccounts")
-  recurringPayments RecurringPayment[] @relation("UserRecurringPayments")
-  createdAt         DateTime           @default(now()) @map("created_at")
-  updatedAt         DateTime           @updatedAt @map("updated_at")
+  id              Int              @id @default(autoincrement()) @map("id")
+  name            String           @map("name")
+  email           String           @unique @map("email")
+  password        String           @map("password")
+  salt            String           @map("salt")
+  paymentAccounts PaymentAccount[] @relation("PaymentAccounts")
+  createdAt       DateTime         @default(now()) @map("created_at")
+  updatedAt       DateTime         @updatedAt @map("updated_at")
 
   @@map("users")
 }
@@ -52,6 +51,7 @@ model Transaction {
   externalRecipient         String?           @map("external_recipient")
   status                    TransactionStatus @map("status")
   type                      TransactionType   @map("type")
+  isByScheduler             Boolean           @default(false) @map("is_by_scheduler")
   senderPaymentAccount      PaymentAccount    @relation("SenderPaymentAccountTransactions", fields: [senderPaymentAccountId], references: [id])
   recipientPaymentAccount   PaymentAccount?   @relation("RecipientPaymentAccountTransactions", fields: [recipientPaymentAccountId], references: [id])
   createdAt                 DateTime          @default(now()) @map("created_at")
@@ -61,17 +61,17 @@ model Transaction {
 }
 
 model RecurringPayment {
-  id               Int             @id @default(autoincrement()) @map("id")
-  userId           Int             @map("user_id")
-  paymentAccountId Int?            @map("payment_account_id")
-  amount           Float           @map("amount")
-  currency         Currency        @map("currency")
-  interval         PaymentInterval @map("interval")
-  nextPaymentAt    DateTime        @map("next_payment_at")
-  createdAt        DateTime        @default(now()) @map("created_at")
-  updatedAt        DateTime        @updatedAt @map("updated_at")
-  user             User            @relation("UserRecurringPayments", fields: [userId], references: [id])
-  paymentAccount   PaymentAccount? @relation("AccountRecurringPayments", fields: [paymentAccountId], references: [id])
+  id                        Int             @id @default(autoincrement()) @map("id")
+  paymentAccountId          Int             @map("payment_account_id")
+  amount                    Float           @map("amount")
+  currency                  Currency        @map("currency")
+  interval                  PaymentInterval @map("interval")
+  transactionType           TransactionType @map("transaction_type")
+  recipientPaymentAccountId Int?            @map("recipient_payment_account_id")
+  externalRecipient         String?         @map("external_recipient")
+  createdAt                 DateTime        @default(now()) @map("created_at")
+  updatedAt                 DateTime        @updatedAt @map("updated_at")
+  paymentAccount            PaymentAccount  @relation("AccountRecurringPayments", fields: [paymentAccountId], references: [id])
 
   @@map("recurring_payments")
 }

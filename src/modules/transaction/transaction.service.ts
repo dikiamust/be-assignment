@@ -112,6 +112,7 @@ export class TransactionService {
     dto: SendMoneyDto,
     userId: number,
     senderPaymentAccountId: number,
+    isByScheduler: boolean = false,
   ) {
     try {
       const { recipientPaymentAccountId, externalRecipient, amount, currency } =
@@ -200,6 +201,7 @@ export class TransactionService {
           externalRecipient,
           status: TransactionStatus.PENDING,
           type: TransactionType.SEND,
+          isByScheduler,
         },
       });
 

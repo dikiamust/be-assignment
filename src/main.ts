@@ -35,6 +35,7 @@ async function bootstrap() {
   await app.listen(port);
 
   const logger = new LoggerNest('bootstrap');
+
   logger.log(
     `Application is running on: ${await app.getUrl()} | Environment: ${
       process.env.NODE_ENV

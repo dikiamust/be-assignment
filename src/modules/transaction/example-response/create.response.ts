@@ -4,6 +4,7 @@ const transaction = {
   recipientPaymentAccountId: 2,
   amount: 1000,
   currency: 'USD',
+  isByScheduler: false,
   externalRecipient: null,
   status: 'COMPLETED',
   createdAt: '2024-08-19T14:34:10.965Z',

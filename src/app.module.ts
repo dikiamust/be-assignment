@@ -8,6 +8,8 @@ import { AuthModule } from './modules/auth/auth.module';
 import { PaymentAccountModule } from './modules/payment-account/payment-account.module';
 import { ConfigModule } from '@nestjs/config';
 import { TransactionModule } from './modules/transaction/transaction.module';
+import { RecurringPaymentModule } from './modules/recurring-payment/recurring-payment.module';
+import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
   imports: [
@@ -16,11 +18,13 @@ import { TransactionModule } from './modules/transaction/transaction.module';
     AuthModule,
     PaymentAccountModule,
     TransactionModule,
+    RecurringPaymentModule,
     CacheModule.register({
       ttl: 5 * 1000, // time to live (TTL) in seconds (5 seconds)
       max: 10, // the maximum number of items to store in cache memory
       isGlobal: true,
     }),
+    ScheduleModule.forRoot(),
   ],
   controllers: [AppController],
   providers: [AppService],
